@@ -165,12 +165,13 @@ class ElseParser(object):
 
     boolOperand = whereCondition | boolean
 
-    whereExpression = operatorPrecedence( boolOperand,
-        [
-            (not_, 1, opAssoc.RIGHT, NotOperator),
-            (or_,  2, opAssoc.LEFT,  OrOperator),
-            (and_, 2, opAssoc.LEFT,  AndOperator),
-        ])
+    whereExpression = quotedString.setParseAction( removeQuotes ) \
+        | operatorPrecedence( boolOperand,
+            [
+                (not_, 1, opAssoc.RIGHT, NotOperator),
+                (or_,  2, opAssoc.LEFT,  OrOperator),
+                (and_, 2, opAssoc.LEFT,  AndOperator),
+            ])
 
     orderseq  = oneOf("asc desc", caseless=True)
     orderList = delimitedList( 
