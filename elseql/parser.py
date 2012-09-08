@@ -104,10 +104,10 @@ def makeAtomObject(fn):
             return fn(tokens)
     return atomAction
 
-class ParserException(ParseBaseException):
+class ElseParserException(ParseBaseException):
     pass
 
-class Parser(object):
+class ElseParser(object):
     # define SQL tokens
     selectStmt   = Forward()
     selectToken  = CaselessKeyword("SELECT")
@@ -198,12 +198,12 @@ class Parser(object):
 
     @staticmethod
     def parse(stmt, debug=False):
-        Parser.grammar_parser.setDebug(debug)
+        ElseParser.grammar_parser.setDebug(debug)
 
         try:
-            return Parser.grammar_parser.parseString(stmt, parseAll=True)
+            return ElseParser.grammar_parser.parseString(stmt, parseAll=True)
         except (ParseException, ParseFatalException), err:
-            raise ParserException(err)
+            raise ElseParserException(err)
 
     @staticmethod
     def test(stmt):
@@ -211,7 +211,7 @@ class Parser(object):
         print ""
 
         try:
-            response = Parser.parse(stmt)
+            response = ElseParser.parse(stmt)
             print "index  = ", response.index
             print "fields = ", response.fields
             print "query  = ", response.query
@@ -231,4 +231,4 @@ if __name__ == '__main__':
     import sys
 
     stmt = " ".join(sys.argv[1:])
-    Parser.test(stmt)
+    ElseParser.test(stmt)
