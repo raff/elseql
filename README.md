@@ -34,6 +34,9 @@ where:
         {where-condition} AND {where-condition}
         {where-condition} OR {where-condition}
 
+    or where-condition:
+        'query in Lucene syntax'
+
     filter-condition: same syntax as {where-condition} but executed as a filter
 
     order-fields: comma-separated list of {field-name} [ASC | DESC]
