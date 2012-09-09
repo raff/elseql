@@ -54,15 +54,17 @@ class ElseSearch(object):
             self.mapping = self.es.get("_mapping")
             self.keywords = []
         except ConnectionError, err:
-            print "cannot connect to", port
+            print "cannot connect to", self.es.url
             print err
 
     def get_keywords(self):
         if self.keywords:
             return self.keywords
 
+        keywords = ['facets', 'filter', 'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
+
         if not self.mapping:
-            return []
+            return sorted(keywords)
 
         def add_properties(plist, doc):
             if 'properties' in doc:
@@ -71,8 +73,6 @@ class ElseSearch(object):
                 for p in props:
                     plist.append(p)  # property name
                     add_properties(plist, props[p])
-
-        keywords = ['facets', 'filter', 'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
 
         for i in self.mapping:
             keywords.append(i)  # index name
@@ -91,7 +91,7 @@ class ElseSearch(object):
 
                 add_properties(keywords, document)
 
-        self.keywords = set(keywords)
+        self.keywords = sorted(set(keywords))
         return self.keywords
 
     def search(self, query):
