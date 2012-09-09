@@ -70,6 +70,9 @@ class ElseShell(cmd.Cmd):
     def do_select(self, line):
         self.search.search('select ' + line)
 
+    def do_explain(self, line):
+        self.search.search(line, explain=True)
+
     def do_EOF(self, line):
         "Exit shell"
         return True

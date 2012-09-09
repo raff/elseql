@@ -74,6 +74,8 @@ class ElseSearch(object):
                     plist.append(p)  # property name
                     add_properties(plist, props[p])
 
+        keywords.extend(['_score', '_all'])
+
         for i in self.mapping:
             keywords.append(i)  # index name
 
@@ -94,7 +96,7 @@ class ElseSearch(object):
         self.keywords = sorted(set(keywords))
         return self.keywords
 
-    def search(self, query):
+    def search(self, query, explain=False):
         try:
             request = ElseParser.parse(query)
         except ElseParserException, err:
@@ -107,6 +109,9 @@ class ElseSearch(object):
             data = { 'query': { 'query_string': { 'query': str(request.query) } } }
         else:
             data = { 'query': { 'match_all': {} } } 
+
+        if explain:
+            data['explain'] = True
 
         if request.filter:
             data['filter'] = { 'query_string': { 'query': str(request.filter) } }
@@ -145,6 +150,8 @@ class ElseSearch(object):
                 print "cannot connect to", self.es.url
                 print err
                 return
+
+            #print result
 
             if 'hits' in result:
                 if 'fields' in data:
