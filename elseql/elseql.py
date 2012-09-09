@@ -64,6 +64,9 @@ class ElseShell(cmd.Cmd):
     def getargs(self, line):
         return shlex.split(str(line.decode('string-escape')))
 
+    def do_keywords(self, line):
+        print self.search.get_keywords()
+
     def do_select(self, line):
         self.search.search('select ' + line)
 
@@ -83,7 +86,6 @@ class ElseShell(cmd.Cmd):
         pass
 
     def onecmd(self, s):
-        print "%s/%s" % (s, type(s))
         try:
             return cmd.Cmd.onecmd(self, s)
         except:
@@ -98,11 +100,11 @@ class ElseShell(cmd.Cmd):
             return cmd.Cmd.default(self, line)
 
     def completedefault(self, test, line, beginidx, endidx):
-        list=[]
+        list = []
 
-        #for t in self.tables:
-        #    if t.startswith(test):
-        #        list.append(t)
+        for k in self.search.get_keywords():
+            if k.startswith(test):
+                list.append(k)
 
         return list
 

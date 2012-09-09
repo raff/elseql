@@ -26,13 +26,58 @@ class ElseSearch(object):
         if port:
             try:
                 self.es = rawes.Elastic(port)
+                self.get_mapping()
             except ConnectionError, err:
                 print "cannot connect to", port
                 print err
-                return
 
         if not self.es:
             self.debug = True
+
+    def get_mapping(self):
+        try:
+            self.mapping = self.es.get("_mapping")
+            self.keywords = []
+        except ConnectionError, err:
+            print "cannot connect to", port
+            print err
+
+    def get_keywords(self):
+        if self.keywords:
+            return self.keywords
+
+        if not self.mapping:
+            return []
+
+        def add_properties(plist, doc):
+            if 'properties' in doc:
+                props = doc['properties']
+
+                for p in props:
+                    plist.append(p)  # property name
+                    add_properties(plist, props[p])
+
+        keywords = []
+
+        for i in self.mapping:
+            keywords.append(i)  # index name
+
+            index = self.mapping[i]
+
+            for t in index:
+                keywords.append(t)  # document type
+
+                document = index[t]
+
+                if '_source' in document:
+                    source = document['_source']
+                    if not 'enabled' in source or source['enabled']:
+                        keywords.append('_source')  # _source is enabled by default
+
+                add_properties(keywords, document)
+
+        self.keywords = set(keywords)
+        return self.keywords
 
     def search(self, query):
         try:
@@ -97,7 +142,8 @@ class ElseSearch(object):
                     for _ in result['hits']['hits']:
                         print [_.get(x) or _['fields'].get(x) for x in fields]
                 else:
-                    print result['hits']['hits'][0]['_source'].keys()
+                    if result['hits']['hits']:
+                        print result['hits']['hits'][0]['_source'].keys()
 
                     for _ in result['hits']['hits']:
                         print _['_source'].values()
