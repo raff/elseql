@@ -13,6 +13,21 @@ class DebugPrinter:
 
 DEFAULT_PORT='localhost:9200'
 
+def _csval(v):
+    if not v:
+        return ''
+
+    if not isinstance(v, basestring):
+        return str(v)
+
+    if v.isalnum():
+        return v
+
+    return '"%s"' % v.replace('"', '""')
+
+def _csvline(l):
+    return ",".join([_csval(v) for v in l])
+
 class ElseSearch(object):
 
     def __init__(self, port=None, debug=False):
@@ -57,7 +72,7 @@ class ElseSearch(object):
                     plist.append(p)  # property name
                     add_properties(plist, props[p])
 
-        keywords = []
+        keywords = ['facets', 'filter', 'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
 
         for i in self.mapping:
             keywords.append(i)  # index name
@@ -119,8 +134,6 @@ class ElseSearch(object):
                 data['from'] = request.limit.pop(0)
 
             data['size'] = request.limit[0]
-        else:
-            data['size'] = 100
 
         if self.debug:
             print "REQUEST: ", pprint.pformat(data)
@@ -137,16 +150,16 @@ class ElseSearch(object):
                 if 'fields' in data:
                     fields = data['fields']
 
-                    print fields
+                    print _csvline(fields)
 
                     for _ in result['hits']['hits']:
-                        print [_.get(x) or _['fields'].get(x) for x in fields]
+                        print _csvline([_.get(x) or _['fields'].get(x) for x in fields])
                 else:
                     if result['hits']['hits']:
-                        print result['hits']['hits'][0]['_source'].keys()
+                        print _csvline(result['hits']['hits'][0]['_source'].keys())
 
                     for _ in result['hits']['hits']:
-                        print _['_source'].values()
+                        print _csvline([_csval(x) for x in _['_source'].values()])
 
                 print ""
                 print "total: ", result['hits']['total']
@@ -154,7 +167,9 @@ class ElseSearch(object):
             if 'facets' in result:
                 for facet in result['facets']:
                     print ""
-                    print facet, 'count'
+                    print "%s,count" % _csval(facet)
 
                     for _ in result['facets'][facet]['terms']:
-                        print _['term'], _['count']
+                        t = _['term']
+                        c = _['count']
+                        print "%s,%s" % (_csval(t), c)
