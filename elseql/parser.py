@@ -204,7 +204,7 @@ class ElseParser(object):
         try:
             return ElseParser.grammar_parser.parseString(stmt, parseAll=True)
         except (ParseException, ParseFatalException), err:
-            raise ElseParserException(err)
+            raise ElseParserException(err.pstr, err.loc, err.msg, err.parserElement)
 
     @staticmethod
     def test(stmt):
@@ -221,7 +221,7 @@ class ElseParser(object):
             print "limit  = ", response.limit
             print "facets = ", response.facets
 
-        except (ParseException, ParseFatalException), err:
+        except ElseParserException, err:
             print err.pstr
             print " "*err.loc + "^\n" + err.msg
             print "ERROR: %s" % err
