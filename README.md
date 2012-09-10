@@ -1,14 +1,15 @@
-
 elseql
 ======
 
 A SQL-like command line client for elasticsearch
 
-USAGE: 
+USAGE
+-----
 
     elseql [--debug] [--port=host:port] 
 
-SEARCH SYNTAX:
+SEARCH SYNTAX
+-------------
 
     SELECT {fields}
         [FACETS {facet-fields}
@@ -44,5 +45,7 @@ where:
     start: start index for pagination
     count: maximum number of returned results
 
-SEE ALSO:
+SEE ALSO
+--------
+
     http://elasticsearch.org/
