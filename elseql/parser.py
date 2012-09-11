@@ -112,6 +112,7 @@ class ElseParser(object):
     selectStmt   = Forward()
     selectToken  = CaselessKeyword("SELECT")
     facetToken   = CaselessKeyword("FACETS")
+    scriptToken  = CaselessKeyword("SCRIPT")
     fromToken    = CaselessKeyword("FROM")
     whereToken   = CaselessKeyword("WHERE")
     orderbyToken = CaselessKeyword("ORDER BY")
@@ -183,11 +184,13 @@ class ElseParser(object):
     #selectExpr  = ( 'count(*)' | columnNameList | '*' )
     selectExpr  = ( columnNameList | '*' )
     facetExpr = columnNameList
+    scriptExpr = columnName + Suppress("=") + quotedString.setParseAction( removeQuotes )
 
     # define the grammar
     selectStmt << ( selectToken + 
         selectExpr.setResultsName( "fields" ) + 
         Optional(facetToken + facetExpr.setResultsName( "facets" )) +
+        Optional(scriptToken + scriptExpr.setResultsName( "script" )) +
         fromToken + indexName.setResultsName( "index" ) +
         Optional(whereToken + whereExpression.setResultsName("query")) +
         Optional(filterToken + whereExpression.setResultsName("filter")) +
@@ -216,6 +219,7 @@ class ElseParser(object):
             print "index  = ", response.index
             print "fields = ", response.fields
             print "query  = ", response.query
+            print "script = ", response.script
             print "filter = ", response.filter
             print "order  = ", response.order
             print "limit  = ", response.limit

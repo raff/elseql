@@ -61,7 +61,8 @@ class ElseSearch(object):
         if self.keywords:
             return self.keywords
 
-        keywords = ['facets', 'filter', 'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
+        keywords = ['facets', 'filter', 'script', 
+                'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
 
         if not self.mapping:
             return sorted(keywords)
@@ -118,6 +119,9 @@ class ElseSearch(object):
 
         if request.facets:
             data['facets'] = { f: { "terms": { "field": f } } for f in request.facets }
+
+        if request.script:
+            data['script_fields'] = { request.script[0]: { "script": request.script[1] } }
 
         if request.fields:
             fields = request.fields
