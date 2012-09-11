@@ -1,7 +1,7 @@
 elseql
 ======
-
-A SQL-like command line client for elasticsearch
+##### You know, for Query
+A SQL-like command line / REPL client for ElasticSearch
 
 ### USAGE
 
