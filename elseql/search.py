@@ -128,8 +128,10 @@ class ElseSearch(object):
                 elif fields[0] == 'count(*)':
                     # TODO: only get count
                     pass
+                else:
+                    data['fields'] = [fields[0]]
             else:
-                data['fields'] = [x for x in request.fields]
+                data['fields'] = [x for x in fields]
 
         if request.order:
             data['sort'] = [{x[0]:x[1]} for x in request.order]
