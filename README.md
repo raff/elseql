@@ -7,6 +7,12 @@ A SQL-like command line / REPL client for ElasticSearch
 
     elseql [--debug] [--port=host:port] 
 
+### COMMANDS
+
+* select - see SEARCH SYNTAX
+* describe [index]
+* help
+
 ### SEARCH SYNTAX
 
     SELECT {fields}
