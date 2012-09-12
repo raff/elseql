@@ -129,7 +129,7 @@ class ElseParser(object):
     ident          = Word( alphas + "_", alphanums + "_$" ).setName("identifier")
     columnName     = delimitedList( ident, ".", combine=True )
     columnNameList = Group( delimitedList( columnName ) )
-    indexName      = Word( alphas, alphanums + "_$" ).setName("identifier")
+    indexName      = delimitedList( ident, ".", combine=True )
 
     #likeExpression fore SQL LIKE expressions
     likeExpr       = quotedString.setParseAction( removeQuotes )
