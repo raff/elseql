@@ -154,12 +154,20 @@ class ElseSearch(object):
 
             data['size'] = request.limit[0]
 
-        command = '/_validate/query' if validate else '/_search'
-        command_path = request.index.replace(".", "/") + command
-        params = None
-
         if validate:
+            command = '/_validate/query' 
             params = {'pretty': True, 'explain': True}
+
+            # valdate doesn't like "query"
+            if 'query' in data:
+                q = data.pop('query')
+                data.update(q)
+
+        else:
+            command = '/_search'
+            params = None
+
+        command_path = request.index.replace(".", "/") + command
 
         if self.debug:
             print ""
@@ -182,10 +190,13 @@ class ElseSearch(object):
                 print ""
 
             if 'valid' in result:
-                print "valid:", result['valid']
                 if 'explanations' in result:
-                    print ""
-                    for e in result['explanations']: print "ERROR:", e['error']
+                    for e in result['explanations']:
+                        print ""
+                        for k,v in e.iteritems():
+                            print k,':',v
+                else:
+                    print "valid:", result['valid']
                 return
 
             if 'error' in result:
