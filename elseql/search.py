@@ -174,12 +174,13 @@ class ElseSearch(object):
                 print "RESPONSE: ", pprint.pformat(result)
                 print ""
 
+            if 'error' in result:
+                print "ERROR: ", result['error']
+                return
+
             if 'failures' in result['_shards']:
                 failures = result['_shards']['failures']
-
-                for f in failures:
-                    print "ERROR: ", f['reason']
-
+                for f in failures: print "ERROR: ", f['reason']
                 return
 
             if 'hits' in result:
