@@ -94,6 +94,9 @@ class ElseShell(cmd.Cmd):
     def do_explain(self, line):
         self.search.search(line, explain=True)
 
+    def do_validate(self, line):
+        self.search.search(line, validate=True)
+
     def do_debug(self, line):
         if line:
             self.search.debug = self.get_boolean(line)

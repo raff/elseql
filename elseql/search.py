@@ -104,7 +104,7 @@ class ElseSearch(object):
         self.keywords = sorted(set(keywords))
         return self.keywords
 
-    def search(self, query, explain=False):
+    def search(self, query, explain=False, validate=False):
         try:
             request = ElseParser.parse(query)
         except ElseParserException, err:
@@ -153,17 +153,23 @@ class ElseSearch(object):
 
             data['size'] = request.limit[0]
 
-        path = request.index.replace(".", "/") + '/_search'
+        command = '/_validate/query' if validate else '/search'
+        command_path = request.index.replace(".", "/") + command
         params = None
 
+        if validate:
+            params = {'pretty': True, 'explain': True}
+
         if self.debug:
-            print "GET ", path
-            print "    ", pprint.pformat(data)
-            params = {'pretty': True}
+            print ""
+            print "GET", command_path, params or ''
+            print "  ", pprint.pformat(data)
+            if not params:
+                params = {'pretty': True}
 
         if self.es:
             try:
-                result = self.es.get(request.index.replace(".", "/") + '/_search', params=params, data=data)
+                result = self.es.get(command_path, params=params, data=data)
             except ConnectionError, err:
                 print "cannot connect to", self.es.url
                 print err
@@ -171,16 +177,23 @@ class ElseSearch(object):
 
             if self.debug:
                 print ""
-                print "RESPONSE: ", pprint.pformat(result)
+                print "RESPONSE:", pprint.pformat(result)
                 print ""
 
+            if 'valid' in result:
+                print "valid:", result['valid']
+                if 'explanations' in result:
+                    print ""
+                    for e in result['explanations']: print "ERROR:", e['error']
+                return
+
             if 'error' in result:
-                print "ERROR: ", result['error']
+                print "ERROR:", result['error']
                 return
 
             if 'failures' in result['_shards']:
                 failures = result['_shards']['failures']
-                for f in failures: print "ERROR: ", f['reason']
+                for f in failures: print "ERROR:", f['reason']
                 return
 
             if 'hits' in result:
