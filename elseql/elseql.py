@@ -42,6 +42,9 @@ except ImportError:
     else:
         import cmd
 
+import os
+import os.path
+import readline
 import shlex
 import pprint
 import traceback
@@ -53,12 +56,18 @@ class DebugPrinter:
     def write(self, s):
         print s
 
+HISTORY_FILE = ".elseql_history"
+
 class ElseShell(cmd.Cmd):
 
     prompt = "elseql> "
 
     def __init__(self, port, debug):
         cmd.Cmd.__init__(self)
+
+        path = os.path.join(os.environ.get('HOME', ''), HISTORY_FILE)
+        self.history_file = os.path.abspath(path)
+
         self.search = ElseSearch(port, debug)
 
     def getargs(self, line):
@@ -66,6 +75,15 @@ class ElseShell(cmd.Cmd):
 
     def do_keywords(self, line):
         print self.search.get_keywords()
+
+    def do_mapping(self, line):
+        "mapping [index-name]"
+        mapping = self.search.get_mapping()
+
+        if line:
+            pprint.pprint(mapping[line])
+        else:
+            pprint.pprint(mapping)
 
     def do_select(self, line):
         self.search.search('select ' + line)
@@ -80,6 +98,11 @@ class ElseShell(cmd.Cmd):
     def do_shell(self, line):
         "Shell"
         os.system(line)
+
+    #
+    # aliases
+    #
+    do_describe = do_mapping
 
     #
     # override cmd
@@ -111,7 +134,15 @@ class ElseShell(cmd.Cmd):
 
         return list
 
+    def preloop(self):
+        if self.history_file and os.path.exists(self.history_file):
+            readline.read_history_file(self.history_file)
+
     def postloop(self):
+        if self.history_file:
+            readline.set_history_length(100)
+            readline.write_history_file(self.history_file)
+
         print "Goodbye!"
 
 def run_command():
