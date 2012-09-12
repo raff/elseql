@@ -73,6 +73,9 @@ class ElseShell(cmd.Cmd):
     def getargs(self, line):
         return shlex.split(str(line.decode('string-escape')))
 
+    def get_boolean(self, arg):
+        return arg and [v for v in ['t','y','on','1'] if arg.startswith(v)] != []
+
     def do_keywords(self, line):
         print self.search.get_keywords()
 
@@ -90,6 +93,12 @@ class ElseShell(cmd.Cmd):
 
     def do_explain(self, line):
         self.search.search(line, explain=True)
+
+    def do_debug(self, line):
+        if line:
+            self.search.debug = self.get_boolean(line)
+
+        print "debug is " + ("ON" if self.search.debug else "OFF")
 
     def do_EOF(self, line):
         "Exit shell"
