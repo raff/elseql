@@ -68,6 +68,15 @@ To do this you will need the pyparsing and rawes packages installed, that are au
 	sudo easy_install pyparsing
 	sudo easy_install rawes
 
+If the cmd2 package is avaliable it's automatically used instead of cmd. This add the extra features supported by cmd2.
+The most useful is redirection:
+
+	elsesql> select id,field1,field2 from index where condition > result.csv
+	
+To install cmd2:
+
+	sudo easy_install cmd2
+	
 ### SEE ALSO
 
-    http://elasticsearch.org/
+http://elasticsearch.org/, You know, for Search
