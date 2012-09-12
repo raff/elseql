@@ -1,11 +1,17 @@
 elseql
 ======
-
-A SQL-like command line client for elasticsearch
+##### You know, for Query
+A SQL-like command line / REPL client for ElasticSearch
 
 ### USAGE
 
     elseql [--debug] [--port=host:port] 
+
+### COMMANDS
+
+* select - see SEARCH SYNTAX
+* describe [index]
+* help
 
 ### SEARCH SYNTAX
 
