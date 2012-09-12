@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
+from elseql import __version__
 
 SETUP_OPTIONS = dict(
     name='elseql',
-    version='0.1.0',
+    version=__version__,
     description='SQL-like command line client for ElasticSearch',
     long_description = open("README.md").read(),
     author='Raffaele Sena',
@@ -23,7 +24,6 @@ SETUP_OPTIONS = dict(
     install_requires=['distribute',
                       'setuptools >= 0.6c11',
                       'pyparsing',
-                      'requests',
                       'rawes',
                       ],
 

@@ -125,7 +125,8 @@ class ElseSearch(object):
             data['filter'] = { 'query_string': { 'query': str(request.filter) } }
 
         if request.facets:
-            data['facets'] = { f: { "terms": { "field": f } } for f in request.facets }
+            # data['facets'] = { f: { "terms": { "field": f } } for f in request.facets }  -- not in python 2.6
+            data['facets'] = dict((f, { "terms": { "field": f } }) for f in request.facets)
 
         if request.script:
             data['script_fields'] = { request.script[0]: { "script": request.script[1] } }
