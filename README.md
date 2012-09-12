@@ -11,6 +11,7 @@ A SQL-like command line / REPL client for ElasticSearch
 
 * select - see SEARCH SYNTAX
 * describe [index]
+* debug [on|off]
 * help
 
 ### SEARCH SYNTAX
