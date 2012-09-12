@@ -154,7 +154,7 @@ class ElseSearch(object):
 
             data['size'] = request.limit[0]
 
-        command = '/_validate/query' if validate else '/search'
+        command = '/_validate/query' if validate else '/_search'
         command_path = request.index.replace(".", "/") + command
         params = None
 
