@@ -33,10 +33,12 @@ class ElseSearch(object):
     def __init__(self, port=None, debug=False):
         self.debug = debug
 
-        if debug:
-            requests_defaults['verbose'] = DebugPrinter()
+        #if self.debug:
+        #    requests_defaults['verbose'] = DebugPrinter()
 
         self.es = None
+        self.mapping = None
+        self.keywords = None
 
         if port:
             try:
@@ -50,12 +52,17 @@ class ElseSearch(object):
             self.debug = True
 
     def get_mapping(self):
+        if self.mapping:
+            return self.mapping
+
         try:
             self.mapping = self.es.get("_mapping")
             self.keywords = []
         except ConnectionError, err:
             print "cannot connect to", self.es.url
             print err
+
+        return self.mapping
 
     def get_keywords(self):
         if self.keywords:
@@ -146,18 +153,34 @@ class ElseSearch(object):
 
             data['size'] = request.limit[0]
 
+        path = request.index.replace(".", "/") + '/_search'
+        params = None
+
         if self.debug:
-            print "REQUEST: ", pprint.pformat(data)
+            print "GET ", path
+            print "    ", pprint.pformat(data)
+            params = {'pretty': True}
 
         if self.es:
             try:
-                result = self.es.get(request.index + '/_search', data=data)
+                result = self.es.get(request.index.replace(".", "/") + '/_search', params=params, data=data)
             except ConnectionError, err:
                 print "cannot connect to", self.es.url
                 print err
                 return
 
-            #print result
+            if self.debug:
+                print ""
+                print "RESPONSE: ", pprint.pformat(result)
+                print ""
+
+            if 'failures' in result['_shards']:
+                failures = result['_shards']['failures']
+
+                for f in failures:
+                    print "ERROR: ", f['reason']
+
+                return
 
             if 'hits' in result:
                 if 'fields' in data:
