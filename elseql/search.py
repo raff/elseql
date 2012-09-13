@@ -158,10 +158,17 @@ class ElseSearch(object):
             command = '/_validate/query' 
             params = {'pretty': True, 'explain': True}
 
-            # valdate doesn't like "query"
+            # validate doesn't like "query"
             if 'query' in data:
                 q = data.pop('query')
                 data.update(q)
+
+        #
+        # this is actually {index}/{document-id}/_explain
+        #
+        #elif explain:
+        #    command = '/_explain' 
+        #    params = {'pretty': True}
 
         else:
             command = '/_search'
@@ -203,7 +210,7 @@ class ElseSearch(object):
                 print "ERROR:", result['error']
                 return
 
-            if 'failures' in result['_shards']:
+            if 'shards' in result and 'failures' in result['_shards']:
                 failures = result['_shards']['failures']
                 for f in failures: print "ERROR:", f['reason']
                 return
@@ -215,7 +222,8 @@ class ElseSearch(object):
                     print _csvline(fields)
 
                     for _ in result['hits']['hits']:
-                        print _csvline([_.get(x) or _['fields'].get(x) for x in fields])
+                        result_fields = _['fields'] if 'fields' in _ else {}
+                        print _csvline([_.get(x) or result_fields.get(x) for x in fields])
                 else:
                     if result['hits']['hits']:
                         print _csvline(result['hits']['hits'][0]['_source'].keys())
