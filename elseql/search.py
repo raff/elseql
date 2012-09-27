@@ -68,7 +68,7 @@ class ElseSearch(object):
         if self.keywords:
             return self.keywords
 
-        keywords = ['facets', 'filter', 'script', 
+        keywords = ['facets', 'filter', 'query', 'exist', 'missing', 'script', 
                 'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
 
         if not self.mapping:
@@ -122,7 +122,12 @@ class ElseSearch(object):
             data['explain'] = True
 
         if request.filter:
-            data['filter'] = { 'query': { 'query_string': { 'query': str(request.query), 'default_operator': 'AND' } } }
+            filter = request.filter
+
+            if filter.name == 'query':
+                data['filter'] = { 'query': { 'query_string': { 'query': str(filter), 'default_operator': 'AND' } } }
+            else:
+                data['filter'] = { filter.name: { 'field': str(filter) } }
 
         if request.facets:
             # data['facets'] = { f: { "terms": { "field": f } } for f in request.facets }  -- not in python 2.6

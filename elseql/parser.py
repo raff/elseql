@@ -78,6 +78,30 @@ class NotOperator(Operator):
     def __str__(self):
         return "NOT %s" % self.operands[0]
 
+class QueryFilter(Operator):
+    def __init__(self, operands=None):
+        self.name = "query"
+        self.operands = [ operands[0] ]
+
+    def __str__(self):
+        return self.operands[0]
+
+class ExistFilter(Operator):
+    def __init__(self, operands=None):
+        self.name = "exists"
+        self.operands = [ operands[0] ]
+
+    def __str__(self):
+        return self.operands[0]
+
+class MissingFilter(Operator):
+    def __init__(self, operands=None):
+        self.name = "missing"
+        self.operands = [ operands[0] ]
+
+    def __str__(self):
+        return self.operands[0]
+
 def makeGroupObject(cls):
     def groupAction(s,loc,tokens):
         #print "GROUPACTION %s" % tokens
@@ -125,6 +149,9 @@ class ElseParser(object):
     not_         = CaselessKeyword("NOT")
 
     filterToken  = CaselessKeyword("FILTER")
+    queryToken   = CaselessKeyword("QUERY")
+    existToken   = CaselessKeyword("EXIST")
+    missingToken = CaselessKeyword("MISSING")
 
     ident          = Word( alphas + "_", alphanums + "_$" ).setName("identifier")
     columnName     = delimitedList( ident, ".", combine=True )
@@ -135,7 +162,7 @@ class ElseParser(object):
     likeExpr       = quotedString.setParseAction( removeQuotes )
 
     E      = CaselessLiteral("E")
-    binop  = oneOf("= >= <= ~= < > <> !=", caseless=True)
+    binop  = oneOf("= >= <= ~= < > <> != EQ NE GT GTE LT LTE", caseless=True)
     lpar   = Suppress("(")
     rpar   = Suppress(")")
     comma  = Suppress(",")
@@ -174,6 +201,10 @@ class ElseParser(object):
                 (and_, 2, opAssoc.LEFT,  AndOperator),
             ])
 
+    filterExpression = (queryToken.suppress() + whereExpression.setResultsName("query")).setParseAction(makeGroupObject(QueryFilter)) \
+        | (existToken.suppress() + columnName).setParseAction(makeGroupObject(ExistFilter)) \
+        | (missingToken.suppress() + columnName).setParseAction(makeGroupObject(MissingFilter))
+
     orderseq  = oneOf("asc desc", caseless=True)
     orderList = delimitedList( 
         Group( columnName + Optional(orderseq, default="asc") ) )
@@ -193,7 +224,7 @@ class ElseParser(object):
         Optional(scriptToken + scriptExpr.setResultsName( "script" )) +
         fromToken + indexName.setResultsName( "index" ) +
         Optional(whereToken + whereExpression.setResultsName("query")) +
-        Optional(filterToken + whereExpression.setResultsName("filter")) +
+        Optional(filterToken + filterExpression.setResultsName("filter")) +
         Optional(orderbyToken + orderList.setResultsName("order")) + 
         Optional(limitToken +Group( Optional(limitoffset + comma) + limitcount ).setResultsName("limit"))
        )
