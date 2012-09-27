@@ -114,7 +114,7 @@ class ElseSearch(object):
             return 1
 
         if request.query:
-            data = { 'query': { 'query_string': { 'query': str(request.query) } } }
+            data = { 'query': { 'query_string': { 'query': str(request.query), 'default_operator': 'AND' } } }
         else:
             data = { 'query': { 'match_all': {} } } 
 
@@ -122,7 +122,7 @@ class ElseSearch(object):
             data['explain'] = True
 
         if request.filter:
-            data['filter'] = { 'query_string': { 'query': str(request.filter) } }
+            data['filter'] = { 'query': { 'query_string': { 'query': str(request.query), 'default_operator': 'AND' } } }
 
         if request.facets:
             # data['facets'] = { f: { "terms": { "field": f } } for f in request.facets }  -- not in python 2.6
