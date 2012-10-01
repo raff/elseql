@@ -28,7 +28,10 @@ def _csval(v):
     return '"%s"' % v.replace('"', '""')
 
 def _csvline(l):
-    return ",".join([_csval(v) for v in l])
+    try:
+        return ",".join([_csval(v).encode("utf-8") for v in l])
+    except UnicodeDecodeError:
+        raise Exception("UnicodeDecodeError for %s" % l)
 
 class ElseSearch(object):
 
