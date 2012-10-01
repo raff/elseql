@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from pyparsing import *
 
 class Operator(object):
@@ -104,7 +105,7 @@ class MissingFilter(Operator):
 
 def makeGroupObject(cls):
     def groupAction(s,loc,tokens):
-        #print "GROUPACTION %s" % tokens
+        #print("GROUPACTION %s" % tokens)
         return cls(tokens)
     return groupAction
 
@@ -237,31 +238,31 @@ class ElseParser(object):
 
         try:
             return ElseParser.grammar_parser.parseString(stmt, parseAll=True)
-        except (ParseException, ParseFatalException), err:
+        except (ParseException, ParseFatalException) as err:
             raise ElseParserException(err.pstr, err.loc, err.msg, err.parserElement)
 
     @staticmethod
     def test(stmt):
-        print "STATEMENT: ", stmt
-        print ""
+        print("STATEMENT: ", stmt)
+        print()
 
         try:
             response = ElseParser.parse(stmt)
-            print "index  = ", response.index
-            print "fields = ", response.fields
-            print "query  = ", response.query
-            print "script = ", response.script
-            print "filter = ", response.filter
-            print "order  = ", response.order
-            print "limit  = ", response.limit
-            print "facets = ", response.facets
+            print("index  = ", response.index)
+            print("fields = ", response.fields)
+            print("query  = ", response.query)
+            print("script = ", response.script)
+            print("filter = ", response.filter)
+            print("order  = ", response.order)
+            print("limit  = ", response.limit)
+            print("facets = ", response.facets)
 
-        except ElseParserException, err:
-            print err.pstr
-            print " "*err.loc + "^\n" + err.msg
-            print "ERROR: %s" % err
+        except ElseParserException as err:
+            print(err.pstr)
+            print(" "*err.loc + "^\n" + err.msg)
+            print("ERROR:", err)
 
-        print
+        print()
 
 if __name__ == '__main__':
     import sys
