@@ -114,7 +114,13 @@ class ElseShell(cmd.Cmd):
         if line:
             self.search.debug = self.get_boolean(line)
 
-        print("debug is " + ("ON" if self.search.debug else "OFF"))
+        print("debug is", ("ON" if self.search.debug else "OFF"))
+
+    def do_query(self, line):
+        if line:
+            self.search.print_query = self.get_boolean(line)
+
+        print("print query is", ("ON" if self.search.print_query else "OFF"))
 
     def do_EOF(self, line):
         "Exit shell"

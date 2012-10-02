@@ -37,6 +37,7 @@ class ElseSearch(object):
 
     def __init__(self, port=None, debug=False):
         self.debug = debug
+        self.print_query = False
 
         #if self.debug:
         #    requests_defaults['verbose'] = DebugPrinter()
@@ -192,6 +193,11 @@ class ElseSearch(object):
             print("  ", pprint.pformat(data))
             if not params:
                 params = {'pretty': True}
+
+        if self.print_query:
+            print()
+            print("; ", _csval(query))
+            print()
 
         if self.es:
             try:
