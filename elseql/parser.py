@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from pyparsing import *
 
 class Operator(object):
@@ -86,9 +87,33 @@ class NotOperator(Operator):
     def __str__(self):
         return "NOT %s" % self.operands[0]
 
+class QueryFilter(Operator):
+    def __init__(self, operands=None):
+        self.name = "query"
+        self.operands = [ operands[0] ]
+
+    def __str__(self):
+        return self.operands[0]
+
+class ExistFilter(Operator):
+    def __init__(self, operands=None):
+        self.name = "exists"
+        self.operands = [ operands[0] ]
+
+    def __str__(self):
+        return self.operands[0]
+
+class MissingFilter(Operator):
+    def __init__(self, operands=None):
+        self.name = "missing"
+        self.operands = [ operands[0] ]
+
+    def __str__(self):
+        return self.operands[0]
+
 def makeGroupObject(cls):
     def groupAction(s,loc,tokens):
-        #print "GROUPACTION %s" % tokens
+        #print("GROUPACTION %s" % tokens)
         return cls(tokens)
     return groupAction
 
@@ -133,6 +158,9 @@ class ElseParser(object):
     not_         = CaselessKeyword("NOT")
 
     filterToken  = CaselessKeyword("FILTER")
+    queryToken   = CaselessKeyword("QUERY")
+    existToken   = CaselessKeyword("EXIST")
+    missingToken = CaselessKeyword("MISSING")
 
     ident          = Word( alphas + "_", alphanums + "_$" ).setName("identifier")
     columnName     = delimitedList( ident, ".", combine=True )
@@ -182,6 +210,10 @@ class ElseParser(object):
                 (and_, 2, opAssoc.LEFT,  AndOperator),
             ])
 
+    filterExpression = (queryToken.suppress() + whereExpression.setResultsName("query")).setParseAction(makeGroupObject(QueryFilter)) \
+        | (existToken.suppress() + columnName).setParseAction(makeGroupObject(ExistFilter)) \
+        | (missingToken.suppress() + columnName).setParseAction(makeGroupObject(MissingFilter))
+
     orderseq  = oneOf("asc desc", caseless=True)
     orderList = delimitedList( 
         Group( columnName + Optional(orderseq, default="asc") ) )
@@ -201,7 +233,7 @@ class ElseParser(object):
         Optional(scriptToken + scriptExpr.setResultsName( "script" )) +
         fromToken + indexName.setResultsName( "index" ) +
         Optional(whereToken + whereExpression.setResultsName("query")) +
-        Optional(filterToken + whereExpression.setResultsName("filter")) +
+        Optional(filterToken + filterExpression.setResultsName("filter")) +
         Optional(orderbyToken + orderList.setResultsName("order")) + 
         Optional(limitToken +Group( Optional(limitoffset + comma) + limitcount ).setResultsName("limit"))
        )
@@ -214,31 +246,31 @@ class ElseParser(object):
 
         try:
             return ElseParser.grammar_parser.parseString(stmt, parseAll=True)
-        except (ParseException, ParseFatalException), err:
+        except (ParseException, ParseFatalException) as err:
             raise ElseParserException(err.pstr, err.loc, err.msg, err.parserElement)
 
     @staticmethod
     def test(stmt):
-        print "STATEMENT: ", stmt
-        print ""
+        print("STATEMENT: ", stmt)
+        print()
 
         try:
             response = ElseParser.parse(stmt)
-            print "index  = ", response.index
-            print "fields = ", response.fields
-            print "query  = ", response.query
-            print "script = ", response.script
-            print "filter = ", response.filter
-            print "order  = ", response.order
-            print "limit  = ", response.limit
-            print "facets = ", response.facets
+            print("index  = ", response.index)
+            print("fields = ", response.fields)
+            print("query  = ", response.query)
+            print("script = ", response.script)
+            print("filter = ", response.filter)
+            print("order  = ", response.order)
+            print("limit  = ", response.limit)
+            print("facets = ", response.facets)
 
-        except ElseParserException, err:
-            print err.pstr
-            print " "*err.loc + "^\n" + err.msg
-            print "ERROR: %s" % err
+        except ElseParserException as err:
+            print(err.pstr)
+            print(" "*err.loc + "^\n" + err.msg)
+            print("ERROR:", err)
 
-        print
+        print()
 
 if __name__ == '__main__':
     import sys

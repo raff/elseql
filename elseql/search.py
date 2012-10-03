@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 from requests.defaults import defaults as requests_defaults
 from requests.exceptions import ConnectionError
 
@@ -9,7 +11,7 @@ import pprint
 
 class DebugPrinter:
     def write(self, s):
-        print s
+        print(s)
 
 DEFAULT_PORT='localhost:9200'
 
@@ -26,12 +28,16 @@ def _csval(v):
     return '"%s"' % v.replace('"', '""')
 
 def _csvline(l):
-    return ",".join([_csval(v) for v in l])
+    try:
+        return ",".join([_csval(v).encode("utf-8") for v in l])
+    except UnicodeDecodeError:
+        raise Exception("UnicodeDecodeError for %s" % l)
 
 class ElseSearch(object):
 
     def __init__(self, port=None, debug=False):
         self.debug = debug
+        self.print_query = False
 
         #if self.debug:
         #    requests_defaults['verbose'] = DebugPrinter()
@@ -44,9 +50,9 @@ class ElseSearch(object):
             try:
                 self.es = rawes.Elastic(port)
                 self.get_mapping()
-            except ConnectionError, err:
-                print "cannot connect to", port
-                print err
+            except ConnectionError as err:
+                print("cannot connect to", port)
+                print(err)
 
         if not self.es:
             self.debug = True
@@ -58,9 +64,9 @@ class ElseSearch(object):
         try:
             self.mapping = self.es.get("_mapping")
             self.keywords = []
-        except ConnectionError, err:
-            print "cannot connect to", self.es.url
-            print err
+        except ConnectionError as err:
+            print("cannot connect to", self.es.url)
+            print(err)
 
         return self.mapping
 
@@ -68,7 +74,7 @@ class ElseSearch(object):
         if self.keywords:
             return self.keywords
 
-        keywords = ['facets', 'filter', 'script', 
+        keywords = ['facets', 'filter', 'query', 'exist', 'missing', 'script', 
                 'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
 
         if not self.mapping:
@@ -107,14 +113,14 @@ class ElseSearch(object):
     def search(self, query, explain=False, validate=False):
         try:
             request = ElseParser.parse(query)
-        except ElseParserException, err:
-            print err.pstr
-            print " "*err.loc + "^\n"
-            print "ERROR: %s" % err
+        except ElseParserException as err:
+            print(err.pstr)
+            print(" "*err.loc + "^\n")
+            print("ERROR:", err)
             return 1
 
         if request.query:
-            data = { 'query': { 'query_string': { 'query': str(request.query) } } }
+            data = { 'query': { 'query_string': { 'query': str(request.query), 'default_operator': 'AND' } } }
         else:
             data = { 'query': { 'match_all': {} } } 
 
@@ -122,7 +128,12 @@ class ElseSearch(object):
             data['explain'] = True
 
         if request.filter:
-            data['filter'] = { 'query_string': { 'query': str(request.filter) } }
+            filter = request.filter
+
+            if filter.name == 'query':
+                data['filter'] = { 'query': { 'query_string': { 'query': str(filter), 'default_operator': 'AND' } } }
+            else:
+                data['filter'] = { filter.name: { 'field': str(filter) } }
 
         if request.facets:
             # data['facets'] = { f: { "terms": { "field": f } } for f in request.facets }  -- not in python 2.6
@@ -177,69 +188,74 @@ class ElseSearch(object):
         command_path = request.index.replace(".", "/") + command
 
         if self.debug:
-            print ""
-            print "GET", command_path, params or ''
-            print "  ", pprint.pformat(data)
+            print()
+            print("GET", command_path, params or '')
+            print("  ", pprint.pformat(data))
             if not params:
                 params = {'pretty': True}
+
+        if self.print_query:
+            print()
+            print("; ", _csval(query))
+            print()
 
         if self.es:
             try:
                 result = self.es.get(command_path, params=params, data=data)
-            except ConnectionError, err:
-                print "cannot connect to", self.es.url
-                print err
+            except ConnectionError as err:
+                print("cannot connect to", self.es.url)
+                print(err)
                 return
 
             if self.debug:
-                print ""
-                print "RESPONSE:", pprint.pformat(result)
-                print ""
+                print()
+                print("RESPONSE:", pprint.pformat(result))
+                print()
 
             if 'valid' in result:
                 if 'explanations' in result:
                     for e in result['explanations']:
-                        print ""
+                        print()
                         for k,v in e.iteritems():
-                            print k,':',v
+                            print(k,':',v)
                 else:
-                    print "valid:", result['valid']
+                    print("valid:", result['valid'])
                 return
 
             if 'error' in result:
-                print "ERROR:", result['error']
+                print("ERROR:", result['error'])
                 return
 
             if 'shards' in result and 'failures' in result['_shards']:
                 failures = result['_shards']['failures']
-                for f in failures: print "ERROR:", f['reason']
+                for f in failures: print("ERROR:", f['reason'])
                 return
 
             if 'hits' in result:
                 if 'fields' in data:
                     fields = data['fields']
 
-                    print _csvline(fields)
+                    print(_csvline(fields))
 
                     for _ in result['hits']['hits']:
                         result_fields = _['fields'] if 'fields' in _ else {}
-                        print _csvline([_.get(x) or result_fields.get(x) for x in fields])
+                        print(_csvline([_.get(x) or result_fields.get(x) for x in fields]))
                 else:
                     if result['hits']['hits']:
-                        print _csvline(result['hits']['hits'][0]['_source'].keys())
+                        print(_csvline(result['hits']['hits'][0]['_source'].keys()))
 
                     for _ in result['hits']['hits']:
-                        print _csvline([_csval(x) for x in _['_source'].values()])
+                        print(_csvline([_csval(x) for x in _['_source'].values()]))
 
-                print ""
-                print "total: ", result['hits']['total']
+                print()
+                print("total: ", result['hits']['total'])
 
             if 'facets' in result:
                 for facet in result['facets']:
-                    print ""
-                    print "%s,count" % _csval(facet)
+                    print()
+                    print("%s,count" % _csval(facet))
 
                     for _ in result['facets'][facet]['terms']:
                         t = _['term']
                         c = _['count']
-                        print "%s,%s" % (_csval(t), c)
+                        print("%s,%s" % (_csval(t), c))

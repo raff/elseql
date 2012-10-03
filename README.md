@@ -47,7 +47,10 @@ where:
     or where-condition:
         'query in Lucene syntax'
 
-    filter-condition: same syntax as {where-condition} but executed as a filter
+    filter-condition: 
+        QUERY {where-condition} - query filter, same syntax as where condition
+        EXIST {field-name}      - exists field filter
+        MISSING {field.name}    - missing field filter
 
     order-fields: comma-separated list of {field-name} [ASC | DESC]
 

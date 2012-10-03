@@ -22,29 +22,34 @@
 #
 # A SQL-like command line tool to query ElasticSearch
 #
+from __future__ import print_function
 
-if __name__ == '__main__':
-    import sys
-    if '--cmd2' in sys.argv:
-        _CMD2_REQUIRED = True
-        sys.argv.remove('--cmd2')
-    else:
-        _CMD2_REQUIRED = False
+import sys
+if '--cmd2' in sys.argv:
+    _CMD2_REQUIRED = True
+    sys.argv.remove('--cmd2')
+else:
+    _CMD2_REQUIRED = False
 
 try:
     import cmd2 as cmd
 except ImportError:
     if _CMD2_REQUIRED:
-        print ""
-        print "cmd2 is not installed: please install and try again"
-        print ""
+        print("")
+        print("cmd2 is not installed: please install and try again")
+        print()
         raise
     else:
         import cmd
 
+try:
+    import readline
+    _HAS_READLINE = True
+except ImportError:
+    _HAS_READLINE = False
+
 import os
 import os.path
-import readline
 import shlex
 import pprint
 import traceback
@@ -54,7 +59,7 @@ from search import ElseSearch, DEFAULT_PORT
 
 class DebugPrinter:
     def write(self, s):
-        print s
+        print(s)
 
 HISTORY_FILE = ".elseql_history"
 
@@ -65,8 +70,11 @@ class ElseShell(cmd.Cmd):
     def __init__(self, port, debug):
         cmd.Cmd.__init__(self)
 
-        path = os.path.join(os.environ.get('HOME', ''), HISTORY_FILE)
-        self.history_file = os.path.abspath(path)
+        if _HAS_READLINE:
+            path = os.path.join(os.environ.get('HOME', ''), HISTORY_FILE)
+            self.history_file = os.path.abspath(path)
+        else:
+            self.history_file = None
 
         self.search = ElseSearch(port, debug)
 
@@ -76,8 +84,13 @@ class ElseShell(cmd.Cmd):
     def get_boolean(self, arg):
         return arg and [v for v in ['t','y','on','1'] if arg.startswith(v)] != []
 
+    def do_version(self, line):
+        print()
+        print("elseql %s - you know, for query" % __version__)
+        print()
+
     def do_keywords(self, line):
-        print self.search.get_keywords()
+        print(self.search.get_keywords())
 
     def do_mapping(self, line):
         "mapping [index-name]"
@@ -101,7 +114,13 @@ class ElseShell(cmd.Cmd):
         if line:
             self.search.debug = self.get_boolean(line)
 
-        print "debug is " + ("ON" if self.search.debug else "OFF")
+        print("debug is", ("ON" if self.search.debug else "OFF"))
+
+    def do_query(self, line):
+        if line:
+            self.search.print_query = self.get_boolean(line)
+
+        print("print query is", ("ON" if self.search.print_query else "OFF"))
 
     def do_EOF(self, line):
         "Exit shell"
@@ -155,7 +174,7 @@ class ElseShell(cmd.Cmd):
             readline.set_history_length(100)
             readline.write_history_file(self.history_file)
 
-        print "Goodbye!"
+        print("Goodbye!")
 
 def run_command():
     import sys
@@ -180,7 +199,7 @@ def run_command():
                 break
 
             else:
-                print "invalid argument ", arg
+                print("invalid argument ", arg)
                 return 1
         else:
             break
