@@ -30,6 +30,14 @@ class BinaryOperator(Operator):
     def __str__(self):
         if self.name == '=':
             return "%s:%s" % (self.operands[0], self.op(1))
+        elif self.name in ['<=', 'LTE', 'LE']:
+            return "%s:[* TO %s]" % (self.operands[0], self.op(1))
+        elif self.name in ['>=', 'GTE', 'GE']:
+            return "%s:[%s TO *]" % (self.operands[0], self.op(1))
+        elif self.name in ['<', 'LT']:
+            return "%s:{* TO %s}" % (self.operands[0], self.op(1))
+        elif self.name in ['>', 'GT']:
+            return "%s:{%s TO *}" % (self.operands[0], self.op(1))
         else:
             return "%s %s %s" % (self.operands[0], self.name, self.op(1))
 
@@ -37,7 +45,7 @@ class LikeOperator(Operator):
     name = 'LIKE'
     
     def __str__(self):
-        return "%s:'%s'" % (self.operands[0], self.operands[1].replace('*','\*').replace('%','*'))
+        return "%s:%s" % (self.operands[0], self.operands[1].replace('*','\*').replace('%','*'))
 
 class BetweenOperator(Operator):
     name = 'BETWEEN'
@@ -135,7 +143,7 @@ class ElseParser(object):
     likeExpr       = quotedString.setParseAction( removeQuotes )
 
     E      = CaselessLiteral("E")
-    binop  = oneOf("= >= <= ~= < > <> !=", caseless=True)
+    binop  = oneOf("= >= <= < > <> != LT LTE LE GT GTE GE", caseless=True)
     lpar   = Suppress("(")
     rpar   = Suppress(")")
     comma  = Suppress(",")
