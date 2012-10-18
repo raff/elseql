@@ -28,9 +28,8 @@ import sys
 
 try:
     import readline
-    _HAS_READLINE = True
 except ImportError:
-    _HAS_READLINE = False
+    readline = None
 
 import os
 import os.path
@@ -62,7 +61,7 @@ class ElseShell(Cmd):
     def __init__(self, port, debug):
         Cmd.__init__(self)
 
-        if _HAS_READLINE:
+        if readline:
             path = os.path.join(os.environ.get('HOME', ''), HISTORY_FILE)
             self.history_file = os.path.abspath(path)
         else:
