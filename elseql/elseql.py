@@ -25,22 +25,6 @@
 from __future__ import print_function
 
 import sys
-if '--cmd2' in sys.argv:
-    _CMD2_REQUIRED = True
-    sys.argv.remove('--cmd2')
-else:
-    _CMD2_REQUIRED = False
-
-try:
-    import cmd2 as cmd
-except ImportError:
-    if _CMD2_REQUIRED:
-        print("")
-        print("cmd2 is not installed: please install and try again")
-        print()
-        raise
-    else:
-        import cmd
 
 try:
     import readline
@@ -54,6 +38,7 @@ import shlex
 import pprint
 import traceback
 
+from cmd2 import Cmd
 from parser import ElseParser, ElseParserException
 from search import ElseSearch, DEFAULT_PORT
 
@@ -63,12 +48,19 @@ class DebugPrinter:
 
 HISTORY_FILE = ".elseql_history"
 
-class ElseShell(cmd.Cmd):
+class ElseShell(Cmd):
 
     prompt = "elseql> "
+    port = DEFAULT_PORT
+    debug = False
+
+    settable = Cmd.settable + """prompt Set command prompt
+                                 port Set service [host:]port
+                                 debug Set debug mode
+                              """
 
     def __init__(self, port, debug):
-        cmd.Cmd.__init__(self)
+        Cmd.__init__(self)
 
         if _HAS_READLINE:
             path = os.path.join(os.environ.get('HOME', ''), HISTORY_FILE)
@@ -76,7 +68,19 @@ class ElseShell(cmd.Cmd):
         else:
             self.history_file = None
 
-        self.search = ElseSearch(port, debug)
+        self.debug = debug
+        self.set_port(None, port)
+
+    def set_port(self, old=None, new=DEFAULT_PORT):
+        port = new
+        self.search = ElseSearch(port, self.debug)
+
+        if self.search.host:
+            print("connected to", self.search.host)
+        else:
+            print("not connected")
+
+    _onchange_port = set_port
 
     def getargs(self, line):
         return shlex.split(str(line.decode('string-escape')))
@@ -144,17 +148,19 @@ class ElseShell(cmd.Cmd):
 
     def onecmd(self, s):
         try:
-            return cmd.Cmd.onecmd(self, s)
+            return Cmd.onecmd(self, s)
+        except NotImplementedError as e:
+            print(e.message)
         except:
             traceback.print_exc()
-            return False
+        return False
 
     def default(self, line):
         line = line.strip()
         if line and line[0] in ['#', ';']:
             return False
         else:
-            return cmd.Cmd.default(self, line)
+            return Cmd.default(self, line)
 
     def completedefault(self, test, line, beginidx, endidx):
         list = []

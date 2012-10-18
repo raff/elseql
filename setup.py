@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
 from elseql import __version__
+
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 SETUP_OPTIONS = dict(
     name='elseql',
@@ -14,6 +18,20 @@ SETUP_OPTIONS = dict(
     url='https://github.com/raff/elseql',
     license = "MIT",
     platforms = "Posix; MacOS X; Windows",
+    classifiers = [
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Topic :: Internet',
+        'Topic :: Utilities',
+        'Topic :: Database :: Front-Ends',
+        'Topic :: Internet :: WWW/HTTP :: Indexing/Search',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7'
+    ],
 
     packages=['elseql'
               ],
@@ -21,10 +39,9 @@ SETUP_OPTIONS = dict(
     data_files=[('.', ['README.md'])
                ],
 
-    install_requires=['distribute',
-                      'setuptools >= 0.6c11',
-                      'pyparsing',
+    install_requires=['pyparsing',
                       'rawes',
+                      'cmd2',
                       ],
 
     entry_points="""

@@ -45,13 +45,14 @@ class ElseSearch(object):
         self.es = None
         self.mapping = None
         self.keywords = None
+        self.host = None
 
         if port:
             try:
                 self.es = rawes.Elastic(port)
                 self.get_mapping()
             except ConnectionError as err:
-                print("cannot connect to", port)
+                print("init: cannot connect to", port)
                 print(err)
 
         if not self.es:
@@ -64,8 +65,9 @@ class ElseSearch(object):
         try:
             self.mapping = self.es.get("_mapping")
             self.keywords = []
+            self.host = self.es.url
         except ConnectionError as err:
-            print("cannot connect to", self.es.url)
+            print("mapping: cannot connect to", self.es.url)
             print(err)
 
         return self.mapping
