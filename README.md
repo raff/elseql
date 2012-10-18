@@ -11,7 +11,7 @@ A SQL-like command line / REPL client for ElasticSearch
 
 * select - see SEARCH SYNTAX
 * describe [index]
-* debug [on|off]
+* set options [on|off]
 * help
 
 ### SEARCH SYNTAX
@@ -57,6 +57,15 @@ where:
     start: start index for pagination
     count: maximum number of returned results
 
+A special case for LIMIT start,count allows to do a "scroll" query (i.e. results will be returned in batches):
+
+    start: -1 - enable "scroll" query
+    count: batch size - the query will return {count} results (actually {count} per shard)
+           and will be repeated until all results are returned.
+
+This is very useful when you are expecting large result sets (or you are doing a full table scan). Note that in
+"scroll" mode sort and facets are disabled.
+
 ### INSTALLATION
 
 With python and setuptools installed:
@@ -67,20 +76,18 @@ You can also run the command without installing as:
 
 	python elseql/elseql.py
 
-To do this you will need the pyparsing and rawes packages installed, that are automatically installed in the previous step.
+To do this you will need the pyparsing, rawes and cmd2 packages installed, that are automatically installed in the previous step.
 
 	sudo easy_install pyparsing
 	sudo easy_install rawes
+        sudo easy_install cmd2
 
-If the cmd2 package is avaliable it's automatically used instead of cmd. This add the extra features supported by cmd2.
-The most useful is redirection:
+The cmd2 package add a few extra features "command-line" related features. The most useful is redirection:
 
 	elsesql> select id,field1,field2 from index where condition > result.csv
-	
-To install cmd2:
 
-	sudo easy_install cmd2
-	
+Note that because '>' is used for redirection you'll need to use GT in the where clause insted (also available LT, GTE, LTE)
+
 ### SEE ALSO
 
 http://elasticsearch.org/, You know, for Search
