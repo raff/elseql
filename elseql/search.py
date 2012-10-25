@@ -2,18 +2,19 @@
 
 from __future__ import print_function
 
-from requests.defaults import defaults as requests_defaults
 from requests.exceptions import ConnectionError
 
 from parser import ElseParser, ElseParserException
 import rawes
 import pprint
 
+
 class DebugPrinter:
     def write(self, s):
         print(s)
 
-DEFAULT_PORT='localhost:9200'
+DEFAULT_PORT = 'localhost:9200'
+
 
 def _csval(v):
     if not v:
@@ -27,11 +28,13 @@ def _csval(v):
 
     return '"%s"' % v.replace('"', '""')
 
+
 def _csvline(l):
     try:
         return ",".join([_csval(v).encode("utf-8") for v in l])
     except UnicodeDecodeError:
         raise Exception("UnicodeDecodeError for %s" % l)
+
 
 class ElseSearch(object):
 
@@ -76,8 +79,8 @@ class ElseSearch(object):
         if self.keywords:
             return self.keywords
 
-        keywords = ['facets', 'filter', 'query', 'exist', 'missing', 'script', 
-                'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
+        keywords = ['facets', 'filter', 'query', 'exist', 'missing', 'script',
+                    'from', 'where', 'in', 'between', 'like', 'order by', 'limit', 'and', 'or', 'not']
 
         if not self.mapping:
             return sorted(keywords)
@@ -117,7 +120,7 @@ class ElseSearch(object):
             request = ElseParser.parse(query)
         except ElseParserException as err:
             print(err.pstr)
-            print(" "*err.loc + "^\n")
+            print(" " * err.loc + "^\n")
             print("ERROR:", err)
             return 1
 
@@ -125,9 +128,9 @@ class ElseSearch(object):
         data_fields = None
 
         if request.query:
-            data = { 'query': { 'query_string': { 'query': str(request.query), 'default_operator': 'AND' } } }
+            data = {'query': {'query_string': {'query': str(request.query), 'default_operator': 'AND'}}}
         else:
-            data = { 'query': { 'match_all': {} } } 
+            data = {'query': {'match_all': {}}}
 
         if explain:
             data['explain'] = True
@@ -136,16 +139,16 @@ class ElseSearch(object):
             filter = request.filter
 
             if filter.name == 'query':
-                data['filter'] = { 'query': { 'query_string': { 'query': str(filter), 'default_operator': 'AND' } } }
+                data['filter'] = {'query': {'query_string': {'query': str(filter), 'default_operator': 'AND'}}}
             else:
-                data['filter'] = { filter.name: { 'field': str(filter) } }
+                data['filter'] = {filter.name: {'field': str(filter)}}
 
         if request.facets:
-            # data['facets'] = { f: { "terms": { "field": f } } for f in request.facets }  -- not in python 2.6
-            data['facets'] = dict((f, { "terms": { "field": f } }) for f in request.facets)
+            # data['facets'] = {f: {"terms": {"field": f}} for f in request.facets}  -- not in python 2.6
+            data['facets'] = dict((f, {"terms": {"field": f}}) for f in request.facets)
 
         if request.script:
-            data['script_fields'] = { request.script[0]: { "script": request.script[1] } }
+            data['script_fields'] = {request.script[0]: {"script": request.script[1]}}
 
         if request.fields:
             fields = request.fields
@@ -173,21 +176,21 @@ class ElseSearch(object):
 
             qsize = request.limit[0]
 
-            if qfrom > 0:
+            if qfrom is None:
+                data['size'] = qsize
+
+            elif qfrom >= 0:
                 data['from'] = qfrom
                 data['size'] = qsize
 
-            elif qfrom < 0:
+            else:
                 #
                 # limit -1, 1000 => scan request, 1000 items at a time
                 #
                 params.update({'search_type': 'scan', 'scroll': '10m', 'size': qsize})
 
-            else:
-                data['size'] = qsize
-
         if validate:
-            command = '/_validate/query' 
+            command = '/_validate/query'
             params.update({'pretty': True, 'explain': True})
 
             # validate doesn't like "query"
@@ -199,7 +202,7 @@ class ElseSearch(object):
         # this is actually {index}/{document-id}/_explain
         #
         #elif explain:
-        #    command = '/_explain' 
+        #    command = '/_explain'
         #    params.update({'pretty': True})
 
         else:
@@ -220,7 +223,7 @@ class ElseSearch(object):
 
         total = None
         print_fields = True
-	do_query = True
+        do_query = True
 
         while self.es and do_query:
             try:
@@ -240,18 +243,18 @@ class ElseSearch(object):
                 params['scroll_id'] = result['_scroll_id']
 
                 if 'search_type' in params:
-		    params.pop('search_type')
+                    params.pop('search_type')
                     command_path = '_search/scroll'
-	    else:
-		# done
-		do_query = False
+            else:
+                # done
+                do_query = False
 
             if 'valid' in result:
                 if 'explanations' in result:
                     for e in result['explanations']:
                         print()
-                        for k,v in e.iteritems():
-                            print(k,':',v)
+                        for k, v in e.iteritems():
+                            print(k, ':', v)
                 else:
                     print("valid:", result['valid'])
                 return
@@ -262,11 +265,12 @@ class ElseSearch(object):
 
             if 'shards' in result and 'failures' in result['_shards']:
                 failures = result['_shards']['failures']
-                for f in failures: print("ERROR:", f['reason'])
+                for f in failures:
+                    print("ERROR:", f['reason'])
                 return
 
             if 'hits' in result:
-            	total = result['hits']['total']
+                total = result['hits']['total']
 
                 if data_fields:
                     if print_fields:
@@ -277,12 +281,12 @@ class ElseSearch(object):
                         result_fields = _['fields'] if 'fields' in _ else {}
                         print(_csvline([_.get(x) or result_fields.get(x) for x in data_fields]))
                 else:
-		    if result['hits']['hits']:
-                       if print_fields:
+                    if result['hits']['hits']:
+                        if print_fields:
                             print_fields = False
                             print(_csvline(result['hits']['hits'][0]['_source'].keys()))
-		    else:
-			do_query = False
+                    else:
+                        do_query = False
 
                     for _ in result['hits']['hits']:
                         print(_csvline([_csval(x) for x in _['_source'].values()]))
