@@ -68,13 +68,19 @@ This is very useful when you are expecting large result sets (or you are doing a
 
 ### INSTALLATION
 
+From pypi:
+
+	sudo easy_install elseql
+or:
+	sudo pip install elseql
+
 With python and setuptools installed:
 
 	sudo python setup.py install
 
 You can also run the command without installing as:
 
-	python elseql/elseql.py
+	python -m elseql.elseql
 
 To do this you will need the pyparsing, rawes and cmd2 packages installed, that are automatically installed in the previous step.
 
