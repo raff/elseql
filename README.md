@@ -1,6 +1,7 @@
 elseql
 ======
-##### You know, for Query
+You know, for Query
+-------------------
 A SQL-like command line / REPL client for ElasticSearch
 
 ### USAGE
@@ -60,8 +61,7 @@ where:
 A special case for LIMIT start,count allows to do a "scroll" query (i.e. results will be returned in batches):
 
     start: -1 - enable "scroll" query
-    count: batch size - the query will return {count} results (actually {count} per shard)
-           and will be repeated until all results are returned.
+    count: batch size - the query will return {count} results (actually {count} per shard) and will be repeated until all results are returned.
 
 This is very useful when you are expecting large result sets (or you are doing a full table scan). Note that in
 "scroll" mode sort and facets are disabled.
