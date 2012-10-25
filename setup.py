@@ -2,23 +2,29 @@
 # -*- coding: utf-8 -*-
 
 from elseql import __version__
+import sys
 
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
 
+if sys.version_info <= (2, 5):
+    error = "ERROR: elseql %s requires Python Version 2.6 or above...exiting." % __version__
+    print >> sys.stderr, error
+    sys.exit(1)
+
 SETUP_OPTIONS = dict(
     name='elseql',
     version=__version__,
     description='SQL-like command line client for ElasticSearch',
-    long_description = open("README.md").read(),
+    long_description=open("README.md").read(),
     author='Raffaele Sena',
     author_email='raff367@gmail.com',
     url='https://github.com/raff/elseql',
-    license = "MIT",
-    platforms = "Posix; MacOS X; Windows",
-    classifiers = [
+    license="MIT",
+    platforms="Posix; MacOS X; Windows",
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
@@ -37,7 +43,7 @@ SETUP_OPTIONS = dict(
               ],
 
     data_files=[('.', ['README.md'])
-               ],
+                ],
 
     install_requires=['pyparsing',
                       'rawes',
