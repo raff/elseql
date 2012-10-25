@@ -52,10 +52,12 @@ class ElseShell(Cmd):
     prompt = "elseql> "
     port = DEFAULT_PORT
     debug = False
+    query = False
 
     settable = Cmd.settable + """prompt Set command prompt
                                  port Set service [host:]port
                                  debug Set debug mode
+                                 query Display query before results
                               """
 
     def __init__(self, port, debug):
@@ -80,6 +82,14 @@ class ElseShell(Cmd):
             print("not connected")
 
     _onchange_port = set_port
+
+    def _onchange_debug(self, old=None, new=False):
+	self.debug = new
+        self.search.debug = self.debug
+
+    def _onchange_query(self, old=None, new=False):
+	self.query = new
+        self.search.print_query = self.query
 
     def getargs(self, line):
         return shlex.split(str(line.decode('string-escape')))
@@ -112,18 +122,6 @@ class ElseShell(Cmd):
 
     def do_validate(self, line):
         self.search.search(line, validate=True)
-
-    def do_debug(self, line):
-        if line:
-            self.search.debug = self.get_boolean(line)
-
-        print("debug is", ("ON" if self.search.debug else "OFF"))
-
-    def do_query(self, line):
-        if line:
-            self.search.print_query = self.get_boolean(line)
-
-        print("print query is", ("ON" if self.search.print_query else "OFF"))
 
     def do_EOF(self, line):
         "Exit shell"
@@ -172,7 +170,10 @@ class ElseShell(Cmd):
 
     def preloop(self):
         if self.history_file and os.path.exists(self.history_file):
-            readline.read_history_file(self.history_file)
+            try:
+                readline.read_history_file(self.history_file)
+            except:
+                print("can't read history file")
 
     def postloop(self):
         if self.history_file:

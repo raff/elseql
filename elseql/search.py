@@ -266,6 +266,8 @@ class ElseSearch(object):
                 return
 
             if 'hits' in result:
+            	total = result['hits']['total']
+
                 if data_fields:
                     if print_fields:
                         print_fields = False
@@ -300,6 +302,6 @@ class ElseSearch(object):
                 print("GET", command_path, params or '')
                 print("  ", pprint.pformat(data))
 
-        if total != None:
+        if total is not None:
             print()
-            print("total: ", result['hits']['total'])
+            print("total: ", total)
