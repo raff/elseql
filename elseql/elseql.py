@@ -15,7 +15,7 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 # OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABIL-
 # ITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-# SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+# SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 
@@ -29,7 +29,16 @@ import sys
 try:
     import readline
 except ImportError:
-    readline = None
+    try:
+        import pyreadline as readline
+    except ImportError:
+        readline = None
+else:
+    import rlcompleter
+    if(sys.platform == 'darwin'):
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind("tab: complete")
 
 import os
 import os.path
@@ -38,14 +47,16 @@ import pprint
 import traceback
 
 from cmd2 import Cmd
-from parser import ElseParser, ElseParserException
 from search import ElseSearch, DEFAULT_PORT
+from version import __version__
+
+HISTORY_FILE = ".elseql_history"
+
 
 class DebugPrinter:
     def write(self, s):
         print(s)
 
-HISTORY_FILE = ".elseql_history"
 
 class ElseShell(Cmd):
 
@@ -84,18 +95,18 @@ class ElseShell(Cmd):
     _onchange_port = set_port
 
     def _onchange_debug(self, old=None, new=False):
-	self.debug = new
+        self.debug = new
         self.search.debug = self.debug
 
     def _onchange_query(self, old=None, new=False):
-	self.query = new
+        self.query = new
         self.search.print_query = self.query
 
     def getargs(self, line):
         return shlex.split(str(line.decode('string-escape')))
 
     def get_boolean(self, arg):
-        return arg and [v for v in ['t','y','on','1'] if arg.startswith(v)] != []
+        return arg and [v for v in ['t', 'y', 'on', '1'] if arg.startswith(v)] != []
 
     def do_version(self, line):
         print()
@@ -182,11 +193,12 @@ class ElseShell(Cmd):
 
         print("Goodbye!")
 
+
 def run_command():
     import sys
 
     args = sys.argv
-    progname = args.pop(0)
+    args.pop(0)  # drop progname
     debug = False
 
     port = DEFAULT_PORT
