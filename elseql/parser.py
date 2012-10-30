@@ -31,6 +31,8 @@ class BinaryOperator(Operator):
     def __str__(self):
         if self.name == '=':
             return "%s:%s" % (self.operands[0], self.op(1))
+        elif self.name == '!=':
+            return "NOT (%s:%s)" % (self.operands[0], self.op(1))
         elif self.name in ['<=', 'LTE', 'LE']:
             return "%s:[* TO %s]" % (self.operands[0], self.op(1))
         elif self.name in ['>=', 'GTE', 'GE']:
