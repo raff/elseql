@@ -72,6 +72,7 @@ From pypi:
 
 	sudo easy_install elseql
 or:
+
 	sudo pip install elseql
 
 With python and setuptools installed:
