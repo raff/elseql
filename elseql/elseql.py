@@ -62,11 +62,13 @@ class ElseShell(Cmd):
 
     prompt = "elseql> "
     port = DEFAULT_PORT
+    creds = None
     debug = False
     query = False
 
     settable = Cmd.settable + """prompt Set command prompt
                                  port Set service [host:]port
+                                 creds Set credentials (user:password)
                                  debug Set debug mode
                                  query Display query before results
                               """
@@ -81,24 +83,33 @@ class ElseShell(Cmd):
             self.history_file = None
 
         self.debug = debug
-        self.set_port(None, port)
+        self.port = port
+        self.init_search()
 
-    def set_port(self, old=None, new=DEFAULT_PORT):
-        port = new
-        self.search = ElseSearch(port, self.debug)
+    def init_search(self):
+        self.search = ElseSearch(self.port, self.debug)
 
         if self.search.host:
             print("connected to", self.search.host)
         else:
             print("not connected")
 
-    _onchange_port = set_port
+    def _onchange_port(self, old=None, new=None):
+        self.port = new
+        self.init_search()
 
-    def _onchange_debug(self, old=None, new=False):
+    def _onchange_creds(self, old=None, new=None):
+        print("change creds to", new)
+
+        self.creds = new.split(":", 1)
+        print("creds:", self.creds)
+        self.init_search()
+
+    def _onchange_debug(self, old=None, new=None):
         self.debug = new
         self.search.debug = self.debug
 
-    def _onchange_query(self, old=None, new=False):
+    def _onchange_query(self, old=None, new=None):
         self.query = new
         self.search.print_query = self.query
 
