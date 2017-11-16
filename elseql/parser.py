@@ -164,6 +164,8 @@ class ElseParser(object):
     existToken   = CaselessKeyword("EXIST")
     missingToken = CaselessKeyword("MISSING")
 
+    routingToken = CaselessKeyword("ROUTING")
+
     ident          = Word( alphas + "_", alphanums + "_$" ).setName("identifier")
     columnName     = delimitedList( ident, ".", combine=True )
     columnNameList = Group( delimitedList( columnName ) )
@@ -171,6 +173,8 @@ class ElseParser(object):
 
     #likeExpression fore SQL LIKE expressions
     likeExpr       = quotedString.setParseAction( removeQuotes )
+
+    routingExpr    = quotedString.setParseAction( removeQuotes )
 
     E      = CaselessLiteral("E")
     binop  = oneOf("= >= <= < > <> != LT LTE LE GT GTE GE", caseless=True)
@@ -237,7 +241,8 @@ class ElseParser(object):
         Optional(whereToken + whereExpression.setResultsName("query")) +
         Optional(filterToken + filterExpression.setResultsName("filter")) +
         Optional(orderbyToken + orderList.setResultsName("order")) + 
-        Optional(limitToken +Group( Optional(limitoffset + comma) + limitcount ).setResultsName("limit"))
+        Optional(limitToken +Group( Optional(limitoffset + comma) + limitcount ).setResultsName("limit")) +
+        Optional(routingToken + routingExpr.setResultsName( "routing" ))
        )
 
     grammar_parser = selectStmt
@@ -266,6 +271,7 @@ class ElseParser(object):
             print("order  = ", response.order)
             print("limit  = ", response.limit)
             print("facets = ", response.facets)
+            print("routing = ", response.routing)
 
         except ElseParserException as err:
             print(err.pstr)

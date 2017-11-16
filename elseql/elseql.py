@@ -43,8 +43,15 @@ else:
 import os
 import os.path
 import shlex
-import pprint
 import traceback
+
+if False:
+    from pprint import pprint
+else:
+    import json
+
+    def pprint(obj):
+        print(json.dumps(obj, indent=2))
 
 from cmd2 import Cmd
 from search import ElseSearch, DEFAULT_PORT
@@ -131,10 +138,13 @@ class ElseShell(Cmd):
         "mapping [index-name]"
         mapping = self.search.get_mapping()
 
-        if line:
-            pprint.pprint(mapping[line])
+        if line == "--list":
+            for k in mapping:
+                print(k)
+        elif line:
+            pprint(mapping[line])
         else:
-            pprint.pprint(mapping)
+            pprint(mapping)
 
     def do_select(self, line):
         self.search.search('select ' + line)

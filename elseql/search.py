@@ -208,6 +208,9 @@ class ElseSearch(object):
         else:
             command = '/_search'
 
+        if request.routing:
+            command += '?routing=%s' % request.routing
+
         command_path = request.index.replace(".", "/") + command
 
         if self.debug:
