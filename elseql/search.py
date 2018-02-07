@@ -8,10 +8,10 @@ from parser import ElseParser, ElseParserException
 import rawes
 import pprint
 
-
-class DebugPrinter:
-    def write(self, s):
-        print(s)
+try:  # for Python 3
+    from http.client import HTTPConnection
+except ImportError:
+    from httplib import HTTPConnection
 
 DEFAULT_PORT = 'localhost:9200'
 
@@ -42,18 +42,18 @@ class ElseSearch(object):
         self.debug = debug
         self.print_query = False
 
-        #if self.debug:
-        #    requests_defaults['verbose'] = DebugPrinter()
-
         self.es = None
         self.mapping = None
         self.keywords = None
         self.host = None
+        self.version = None
+        self.v5 = None
 
         if port:
             try:
-                self.es = rawes.Elastic(port)
+                self.es = rawes.Elastic(port, headers={'content-type': 'application/json'})
                 self.get_mapping()
+                self.get_version()
             except ConnectionError as err:
                 print("init: cannot connect to", port)
                 print(err)
@@ -61,17 +61,27 @@ class ElseSearch(object):
         if not self.es:
             self.debug = True
 
-    def get_mapping(self):
-        if self.mapping:
-            return self.mapping
+    def get_version(self):
+        if not self.version:
+            try:
+                info = self.es.get("")
+                self.version = info["version"]["number"]
+                self.v5 = self.version[:2] >= "5."
+            except ConnectionError as err:
+                print("mapping: cannot connect to", self.es.url)
+                print(err)
 
-        try:
-            self.mapping = self.es.get("_mapping")
-            self.keywords = []
-            self.host = self.es.url
-        except ConnectionError as err:
-            print("mapping: cannot connect to", self.es.url)
-            print(err)
+        return self.version
+
+    def get_mapping(self):
+        if not self.mapping:
+            try:
+                self.mapping = self.es.get("_mapping")
+                self.keywords = []
+                self.host = self.es.url
+            except ConnectionError as err:
+                print("mapping: cannot connect to", self.es.url)
+                print(err)
 
         return self.mapping
 
@@ -107,7 +117,7 @@ class ElseSearch(object):
 
                 if '_source' in document:
                     source = document['_source']
-                    if not 'enabled' in source or source['enabled']:
+                    if 'enabled' not in source or source['enabled']:
                         keywords.append('_source')  # _source is enabled by default
 
                 add_properties(keywords, document)
@@ -152,6 +162,7 @@ class ElseSearch(object):
 
         if request.fields:
             fields = request.fields
+            fields_k = '_source' if self.v5 else 'fields'
             if len(fields) == 1:
                 if fields[0] == '*':
                     # all fields
@@ -160,9 +171,11 @@ class ElseSearch(object):
                     # TODO: only get count
                     pass
                 else:
-                    data_fields = data['fields'] = [fields[0]]
+                    data[fields_k] = [fields[0]]
             else:
-                data_fields = data['fields'] = [x for x in fields]
+                data[fields_k] = [x for x in fields]
+
+            data_fields = data.get(fields_k)
 
         if request.order:
             data['sort'] = [{x[0]:x[1]} for x in request.order]
@@ -191,7 +204,7 @@ class ElseSearch(object):
 
         if validate:
             command = '/_validate/query'
-            params.update({'pretty': True, 'explain': True})
+            params.update({'pretty': 'true', 'explain': 'true'})
 
             # validate doesn't like "query"
             if 'query' in data:
@@ -201,9 +214,9 @@ class ElseSearch(object):
         #
         # this is actually {index}/{document-id}/_explain
         #
-        #elif explain:
+        # elif explain:
         #    command = '/_explain'
-        #    params.update({'pretty': True})
+        #    params.update({'pretty': 'true'})
 
         else:
             command = '/_search'
@@ -214,10 +227,14 @@ class ElseSearch(object):
         command_path = request.index.replace(".", "/") + command
 
         if self.debug:
+            HTTPConnection.debuglevel = 1
+
             print()
             print("GET", command_path, params or '')
             print("  ", pprint.pformat(data))
-            params.update({'pretty': True})
+            params.update({'pretty': 'true'})
+        else:
+            HTTPConnection.debuglevel = 0
 
         if self.print_query:
             print()
@@ -273,25 +290,26 @@ class ElseSearch(object):
                 return
 
             if 'hits' in result:
-                total = result['hits']['total']
+                hits = result['hits']
+                total = hits['total']
 
-                if data_fields:
+                if data_fields and not self.v5:
                     if print_fields:
                         print_fields = False
                         print(_csvline(data_fields))
 
-                    for _ in result['hits']['hits']:
+                    for _ in hits['hits']:
                         result_fields = _['fields'] if 'fields' in _ else {}
                         print(_csvline([_.get(x) or result_fields.get(x) for x in data_fields]))
                 else:
-                    if result['hits']['hits']:
+                    if hits['hits']:
                         if print_fields:
                             print_fields = False
-                            print(_csvline(result['hits']['hits'][0]['_source'].keys()))
+                            print(_csvline(hits['hits'][0]['_source'].keys()))
                     else:
                         do_query = False
 
-                    for _ in result['hits']['hits']:
+                    for _ in hits['hits']:
                         print(_csvline([_csval(x) for x in _['_source'].values()]))
 
             if 'facets' in result:

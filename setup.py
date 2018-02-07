@@ -14,8 +14,8 @@ if sys.version_info <= (2, 5):
     print >> sys.stderr, error
     sys.exit(1)
 
-elif sys.version_info < (3, 0):
-    pyparsing_version = "< 2.0.0"
+#elif sys.version_info < (3, 0):
+#    pyparsing_version = "< 2.0.0"
 else:
     pyparsing_version = ""
 
@@ -47,7 +47,7 @@ SETUP_OPTIONS = dict(
     packages=['elseql'
               ],
 
-    data_files=[('.', ['README.md'])
+    data_files=[('.', ['./README.md'])
                 ],
 
     install_requires=['pyparsing' + pyparsing_version,
