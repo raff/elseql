@@ -73,15 +73,16 @@ class ElseShell(Cmd):
     debug = False
     query = False
 
-    settable = Cmd.settable + """prompt Set command prompt
-                                 port Set service [host:]port
-                                 creds Set credentials (user:password)
-                                 debug Set debug mode
-                                 query Display query before results
-                              """
-
     def __init__(self, port, debug):
         Cmd.__init__(self)
+
+        self.settable.update({
+            "prompt": "Set command prompt",
+            "port": "Set service [host:]port",
+            "creds": "Set credentials (user:password)",
+            "debug": "Set debug mode",
+            "query": "Display query before results"
+        })
 
         if readline:
             path = os.path.join(os.environ.get('HOME', ''), HISTORY_FILE)
@@ -129,6 +130,7 @@ class ElseShell(Cmd):
     def do_version(self, line):
         print()
         print("elseql %s - you know, for query" % __version__)
+        print("es version:", self.search.get_version())
         print()
 
     def do_keywords(self, line):
@@ -244,6 +246,7 @@ def run_command():
             break
 
     ElseShell(port, debug).cmdloop()
+
 
 if __name__ == "__main__":
     run_command()
