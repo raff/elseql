@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from pyparsing import *
+from pyparsing import (Optional, Word, delimitedList, Group, quotedString, nums,
+                       Empty, removeQuotes, Combine, Suppress, CaselessLiteral, oneOf,
+                       operatorPrecedence, opAssoc, alphas, alphanums, CaselessKeyword,
+                       Forward, ParseBaseException, ParseException, ParseFatalException)
+
 
 class Operator(object):
     name = '<UnknownOperator>'
@@ -23,10 +27,11 @@ class Operator(object):
         else:
             return str(x)
 
+
 class BinaryOperator(Operator):
     def __init__(self, operands):
         self.name = operands[1]
-        self.operands = [ operands[0], operands[2] ]
+        self.operands = [operands[0], operands[2]]
 
     def __str__(self):
         if self.name == '=':
@@ -44,11 +49,13 @@ class BinaryOperator(Operator):
         else:
             return "%s %s %s" % (self.operands[0], self.name, self.op(1))
 
+
 class LikeOperator(Operator):
     name = 'LIKE'
-    
+
     def __str__(self):
-        return "%s:%s" % (self.operands[0], self.operands[1].replace('*','\*').replace('%','*'))
+        return "%s:%s" % (self.operands[0], self.operands[1].replace('*', '\*').replace('%', '*'))
+
 
 class BetweenOperator(Operator):
     name = 'BETWEEN'
@@ -56,14 +63,16 @@ class BetweenOperator(Operator):
     def __str__(self):
         return "%s:[%s TO %s]" % (self.operands[0], self.op(1), self.op(2))
 
+
 class InOperator(Operator):
     name = 'IN'
-    
+
     def __init__(self, operands):
         self.operands = [operands[0], operands[1:]]
 
     def __str__(self):
         return "%s:(%s)" % (self.operands[0], ' OR '.join([self.val(x) for x in self.operands[1]]))
+
 
 class AndOperator(Operator):
     def __init__(self, operands=None):
@@ -73,6 +82,7 @@ class AndOperator(Operator):
     def __str__(self):
         return ' AND '.join([self.val(x) for x in self.operands])
 
+
 class OrOperator(Operator):
     def __init__(self, operands=None):
         self.name = 'OR'
@@ -80,6 +90,7 @@ class OrOperator(Operator):
 
     def __str__(self):
         return ' OR '.join([self.val(x) for x in self.operands])
+
 
 class NotOperator(Operator):
     def __init__(self, operands=None):
@@ -89,47 +100,56 @@ class NotOperator(Operator):
     def __str__(self):
         return "NOT %s" % self.operands[0]
 
+
 class QueryFilter(Operator):
     def __init__(self, operands=None):
         self.name = "query"
-        self.operands = [ operands[0] ]
+        self.operands = [operands[0]]
 
     def __str__(self):
         return self.operands[0]
+
 
 class ExistFilter(Operator):
     def __init__(self, operands=None):
         self.name = "exists"
-        self.operands = [ operands[0] ]
+        self.operands = [operands[0]]
 
     def __str__(self):
         return self.operands[0]
+
 
 class MissingFilter(Operator):
     def __init__(self, operands=None):
         self.name = "missing"
-        self.operands = [ operands[0] ]
+        self.operands = [operands[0]]
 
     def __str__(self):
         return self.operands[0]
 
+
 def makeGroupObject(cls):
-    def groupAction(s,loc,tokens):
-        #print("GROUPACTION %s" % tokens)
+    def groupAction(s, loc, tokens):
+        # print("GROUPACTION %s" % tokens)
         return cls(tokens)
     return groupAction
+
 
 def invalidSyntax(s, loc, token):
     raise ParseFatalException(s, loc, "Invalid Syntax")
 
+
 def intValue(t):
     return int(t)
+
 
 def floatValue(t):
     return float(t)
 
+
 def boolValue(t):
     return t.lower() == 'true'
+
 
 def makeAtomObject(fn):
     def atomAction(s, loc, tokens):
@@ -139,8 +159,10 @@ def makeAtomObject(fn):
             return fn(tokens)
     return atomAction
 
+
 class ElseParserException(ParseBaseException):
     pass
+
 
 class ElseParser(object):
     # define SQL tokens
@@ -166,15 +188,15 @@ class ElseParser(object):
 
     routingToken = CaselessKeyword("ROUTING")
 
-    ident          = Word( alphas + "_", alphanums + "_$" ).setName("identifier")
-    columnName     = delimitedList( ident, ".", combine=True )
-    columnNameList = Group( delimitedList( columnName ) )
-    indexName      = delimitedList( ident, ".", combine=True )
+    ident          = Word(alphas + "_", alphanums + "_$").setName("identifier")
+    columnName     = delimitedList(ident, ".", combine=True)
+    columnNameList = Group(delimitedList(columnName))
+    indexName      = delimitedList(ident, ".", combine=True)
 
-    #likeExpression fore SQL LIKE expressions
-    likeExpr       = quotedString.setParseAction( removeQuotes )
+    # likeExpression for SQL LIKE expressions
+    likeExpr       = quotedString.setParseAction(removeQuotes)
 
-    routingExpr    = quotedString.setParseAction( removeQuotes )
+    routingExpr    = quotedString.setParseAction(removeQuotes)
 
     E      = CaselessLiteral("E")
     binop  = oneOf("= >= <= < > <> != LT LTE LE GT GTE GE", caseless=True)
@@ -182,35 +204,30 @@ class ElseParser(object):
     rpar   = Suppress(")")
     comma  = Suppress(",")
 
-    arithSign = Word("+-",exact=1)
+    arithSign = Word("+-", exact=1)
 
-    realNum = Combine( 
+    realNum = Combine(
         Optional(arithSign) +
-        ( Word( nums ) + "." + Optional( Word(nums) ) | ( "." + Word(nums) ) ) +
-        Optional( E + Optional(arithSign) + Word(nums) ) ) \
-            .setParseAction(makeAtomObject(floatValue))
+        (Word(nums) + "." + Optional(Word(nums)) | ("." + Word(nums))) +
+        Optional(E + Optional(arithSign) + Word(nums))).setParseAction(makeAtomObject(floatValue))
 
-    intNum = Combine( Optional(arithSign) + Word( nums ) + 
-        Optional( E + Optional("+") + Word(nums) ) ) \
-            .setParseAction(makeAtomObject(intValue))
+    intNum = Combine(Optional(arithSign) + Word(nums) +
+                     Optional(E + Optional("+") + Word(nums))).setParseAction(makeAtomObject(intValue))
 
-    boolean = oneOf("true false", caseless=True) \
-        .setParseAction(makeAtomObject(boolValue))
+    boolean = oneOf("true false", caseless=True).setParseAction(makeAtomObject(boolValue))
 
-    columnRval = realNum | intNum | boolean | quotedString.setParseAction( removeQuotes )
+    columnRval = realNum | intNum | boolean | quotedString.setParseAction(removeQuotes)
 
-    whereCondition = ( columnName + binop + columnRval ) \
-            .setParseAction(makeGroupObject(BinaryOperator)) \
-       | ( columnName + in_.suppress() + lpar + delimitedList( columnRval ) + rpar ).setParseAction(makeGroupObject(InOperator)) \
-       | ( columnName + between.suppress() + columnRval + and_.suppress() + columnRval ).setParseAction(makeGroupObject(BetweenOperator)) \
-       | ( columnName + likeop.suppress() + likeExpr  ).setParseAction(makeGroupObject(LikeOperator)) \
-       | Empty().setParseAction(invalidSyntax)
+    whereCondition = (columnName + binop + columnRval).setParseAction(makeGroupObject(BinaryOperator)) \
+        | (columnName + in_.suppress() + lpar + delimitedList(columnRval) + rpar).setParseAction(makeGroupObject(InOperator)) \
+        | (columnName + between.suppress() + columnRval + and_.suppress() + columnRval).setParseAction(makeGroupObject(BetweenOperator)) \
+        | (columnName + likeop.suppress() + likeExpr).setParseAction(makeGroupObject(LikeOperator)) \
+        | Empty().setParseAction(invalidSyntax)
 
     boolOperand = whereCondition | boolean
 
-    whereExpression = quotedString.setParseAction( removeQuotes ) \
-        | operatorPrecedence( boolOperand,
-            [
+    whereExpression = quotedString.setParseAction(removeQuotes) \
+        | operatorPrecedence(boolOperand, [
                 (not_, 1, opAssoc.RIGHT, NotOperator),
                 (or_,  2, opAssoc.LEFT,  OrOperator),
                 (and_, 2, opAssoc.LEFT,  AndOperator),
@@ -220,30 +237,29 @@ class ElseParser(object):
         | (existToken.suppress() + columnName).setParseAction(makeGroupObject(ExistFilter)) \
         | (missingToken.suppress() + columnName).setParseAction(makeGroupObject(MissingFilter))
 
-    orderseq  = oneOf("asc desc", caseless=True)
-    orderList = delimitedList( 
-        Group( columnName + Optional(orderseq, default="asc") ) )
+    orderseq = oneOf("asc desc", caseless=True)
+    orderList = delimitedList(
+        Group(columnName + Optional(orderseq, default="asc")))
 
     limitoffset = intNum
-    limitcount  = intNum
+    limitcount = intNum
 
-    #selectExpr  = ( 'count(*)' | columnNameList | '*' )
-    selectExpr  = ( columnNameList | '*' )
+    # selectExpr  = ('count(*)' | columnNameList | '*')
+    selectExpr = (columnNameList | '*')
     facetExpr = columnNameList
-    scriptExpr = columnName + Suppress("=") + quotedString.setParseAction( removeQuotes )
+    scriptExpr = columnName + Suppress("=") + quotedString.setParseAction(removeQuotes)
 
     # define the grammar
-    selectStmt << ( selectToken + 
-        selectExpr.setResultsName( "fields" ) + 
-        Optional(facetToken + facetExpr.setResultsName( "facets" )) +
-        Optional(scriptToken + scriptExpr.setResultsName( "script" )) +
-        fromToken + indexName.setResultsName( "index" ) +
-        Optional(whereToken + whereExpression.setResultsName("query")) +
-        Optional(filterToken + filterExpression.setResultsName("filter")) +
-        Optional(orderbyToken + orderList.setResultsName("order")) + 
-        Optional(limitToken +Group( Optional(limitoffset + comma) + limitcount ).setResultsName("limit")) +
-        Optional(routingToken + routingExpr.setResultsName( "routing" ))
-       )
+    selectStmt << (selectToken +
+                   selectExpr.setResultsName("fields") +
+                   Optional(facetToken + facetExpr.setResultsName("facets")) +
+                   Optional(scriptToken + scriptExpr.setResultsName("script")) +
+                   fromToken + indexName.setResultsName("index") +
+                   Optional(whereToken + whereExpression.setResultsName("query")) +
+                   Optional(filterToken + filterExpression.setResultsName("filter")) +
+                   Optional(orderbyToken + orderList.setResultsName("order")) +
+                   Optional(limitToken + Group(Optional(limitoffset + comma) + limitcount).setResultsName("limit")) +
+                   Optional(routingToken + routingExpr.setResultsName("routing")))
 
     grammar_parser = selectStmt
 
@@ -279,6 +295,7 @@ class ElseParser(object):
             print("ERROR:", err)
 
         print()
+
 
 if __name__ == '__main__':
     import sys
