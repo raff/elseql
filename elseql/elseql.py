@@ -28,17 +28,23 @@ import sys
 
 try:
     import readline
+    assert readline
 except ImportError:
     try:
         import pyreadline as readline
+        assert readline
     except ImportError:
         readline = None
 else:
     import rlcompleter
-    if(sys.platform == 'darwin'):
+    assert rlcompleter
+
+    if(sys.platform == 'darwin') and 'libedit' in readline.__doc__:
         readline.parse_and_bind("bind ^I rl_complete")
     else:
         readline.parse_and_bind("tab: complete")
+
+    # readline.parse_and_bind("tab: complete")
 
 import os
 import os.path
