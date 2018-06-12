@@ -97,4 +97,5 @@ Note that because '>' is used for redirection you'll need to use GT in the where
 
 ### SEE ALSO
 
-http://elasticsearch.org/, You know, for Search
+- http://elasticsearch.org/, You know, for Search
+- https://github.com/raff/elseql-go, a Go implementation
